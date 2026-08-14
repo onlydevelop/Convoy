@@ -18,6 +18,7 @@
 #   make deploy-all ENV=cloud                        # infra + all services
 #   make rollback SERVICE=ingestion-service ENV=cloud
 #   make status ENV=local                             # nodes/deployments/pods/svc
+#   make health ENV=local                             # hit /health on both services
 #   make teardown ENV=local                          # delete everything (services, infra, namespace)
 #   make setup-cloud ENV=cloud DEPLOY_USER=... DEPLOY_HOST=...  # install k3s+helm on a fresh VM
 #
@@ -58,7 +59,7 @@ endif
 .PHONY: help check-registry check-service check-cloud setup-cloud \
         build build-all image image-all push push-all \
         helm-repo namespace ghcr-secret deploy-infra deploy-init \
-        deploy-service deploy-services deploy-all rollback status bootstrap clean \
+        deploy-service deploy-services deploy-all rollback status health bootstrap clean \
         teardown-services teardown-infra teardown
 
 help: ## Show this help
@@ -162,6 +163,12 @@ rollback: check-service ## Undo the last rollout for one service (SERVICE=<name>
 status: ## Show cluster/namespace status: nodes, deployments, pods, services
 	$(KUBECTL) get nodes -o wide
 	$(KUBECTL) get deployments,pods,svc -n $(NAMESPACE) -o wide
+
+health: ## Hit the /health endpoint on both services via kubectl exec
+	@echo "== ingestion-service (:8080/health) =="
+	@$(KUBECTL) exec -n $(NAMESPACE) deploy/ingestion-service -- wget -qO- http://localhost:8080/health && echo
+	@echo "== load-generator (:8081/health) =="
+	@$(KUBECTL) exec -n $(NAMESPACE) deploy/load-generator -- wget -qO- http://localhost:8081/health && echo
 
 ## --- whole stack ---------------------------------------------------------
 
