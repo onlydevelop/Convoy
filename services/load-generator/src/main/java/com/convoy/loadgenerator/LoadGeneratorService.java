@@ -4,7 +4,7 @@ import com.convoy.telemetry.TelemetryEvent;
 import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.ThreadLocalRandom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,10 +13,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
- * Simulates the fleet: each vehicle pings once per {@code ping-interval-seconds}.
- * Vehicles are bucketed by index so pings are spread evenly across the
- * interval window (one bucket fired per second) instead of bursting all at
- * once, matching the sustained-rate assumption in spec §3.
+ * Simulates the fleet: once per second, sends a random number of pings
+ * between {@code min-requests-per-second} and {@code max-requests-per-second}
+ * (spec §3's ~1,000 events/sec is a sustained average, not a fixed rate -
+ * this exercises the burst variability called out but not yet quantified
+ * there). Vehicles are drawn round-robin off a rotating cursor rather than
+ * resampled each tick, so load stays random in volume while every vehicle
+ * still gets an even share of pings over time.
  */
 @Service
 public class LoadGeneratorService {
@@ -25,35 +28,38 @@ public class LoadGeneratorService {
 
     private final WebClient webClient;
     private final int vehicleCount;
-    private final int pingIntervalSeconds;
-    private final AtomicLong tick = new AtomicLong();
-    private List<List<VehicleState>> buckets;
+    private final int minRequestsPerSecond;
+    private final int maxRequestsPerSecond;
+    private int cursor;
+    private List<VehicleState> fleet;
 
     public LoadGeneratorService(
             WebClient ingestionWebClient,
             @Value("${app.simulation.vehicle-count}") int vehicleCount,
-            @Value("${app.simulation.ping-interval-seconds}") int pingIntervalSeconds) {
+            @Value("${app.simulation.min-requests-per-second}") int minRequestsPerSecond,
+            @Value("${app.simulation.max-requests-per-second}") int maxRequestsPerSecond) {
         this.webClient = ingestionWebClient;
         this.vehicleCount = vehicleCount;
-        this.pingIntervalSeconds = pingIntervalSeconds;
+        this.minRequestsPerSecond = minRequestsPerSecond;
+        this.maxRequestsPerSecond = maxRequestsPerSecond;
     }
 
     @PostConstruct
     void initFleet() {
-        buckets = new ArrayList<>(pingIntervalSeconds);
-        for (int i = 0; i < pingIntervalSeconds; i++) {
-            buckets.add(new ArrayList<>());
-        }
+        fleet = new ArrayList<>(vehicleCount);
         for (int i = 0; i < vehicleCount; i++) {
-            buckets.get(i % pingIntervalSeconds).add(new VehicleState(i));
+            fleet.add(new VehicleState(i));
         }
-        log.info("Initialized {} simulated vehicles across {} buckets", vehicleCount, pingIntervalSeconds);
+        log.info("Initialized {} simulated vehicles, sending {}-{} req/sec", vehicleCount, minRequestsPerSecond, maxRequestsPerSecond);
     }
 
     @Scheduled(fixedRate = 1000)
     void tick() {
-        int bucket = (int) (tick.getAndIncrement() % pingIntervalSeconds);
-        for (VehicleState vehicle : buckets.get(bucket)) {
+        int target = ThreadLocalRandom.current().nextInt(minRequestsPerSecond, maxRequestsPerSecond + 1);
+        for (int i = 0; i < target; i++) {
+            VehicleState vehicle = fleet.get(cursor);
+            cursor = (cursor + 1) % vehicleCount;
+
             TelemetryEvent payload = vehicle.step();
             log.info("Sending telemetry for vehicle {}", payload.vehicleId());
             webClient.post()

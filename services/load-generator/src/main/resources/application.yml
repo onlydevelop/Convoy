@@ -12,7 +12,8 @@ app:
     url: ${INGESTION_SERVICE_URL:http://ingestion-service.convoy.svc.cluster.local:8080}
   simulation:
     vehicle-count: ${VEHICLE_COUNT:10000}
-    ping-interval-seconds: ${PING_INTERVAL_SECONDS:10}
+    min-requests-per-second: ${MIN_RPS:500}
+    max-requests-per-second: ${MAX_RPS:1000}
 
 management:
   endpoints:
