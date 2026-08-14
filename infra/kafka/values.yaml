@@ -41,3 +41,10 @@ overrideConfiguration:
   offsets.topic.replication.factor: 1
   transaction.state.log.replication.factor: 1
   transaction.state.log.min.isr: 1
+  # Broker-wide default so any topic without its own retention.ms override
+  # (currently just vehicle.telemetry.raw) ages out after 20 minutes instead
+  # of the 7-day default -- keeps the single 2Gi PVC from filling up during
+  # sustained load-generator runs. Deletion is still bounded by
+  # log.retention.check.interval.ms (default 5 min), so data can briefly
+  # outlive 20 minutes before the next check sweeps it.
+  log.retention.minutes: 20
