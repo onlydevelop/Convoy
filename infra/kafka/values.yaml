@@ -16,10 +16,18 @@ controller:
   resources:
     requests:
       cpu: 500m
-      memory: 1Gi
+      # 1Gi/1536Mi wasn't enough headroom once log.roll.ms (below) made
+      # segments actually roll every few minutes: JVM heap (MaxRAMPercentage
+      # 75%, so ~1152Mi ceiling on the old 1536Mi limit) plus the OS page
+      # cache churn from constantly closing/reopening 12 partitions' worth
+      # of segment files pushed memory.current to 77% of the limit and
+      # still climbing within 35 minutes of a fresh restart. Same failure
+      # shape as the Grafana OOMKills -- give it real headroom instead of
+      # tuning to the edge.
+      memory: 1.5Gi
     limits:
       cpu: 1000m
-      memory: 1536Mi
+      memory: 2560Mi
   persistence:
     size: 2Gi
 
@@ -53,7 +61,14 @@ overrideConfiguration:
   # appended to. Left at the 168h/1GiB defaults, a single partition at this
   # topic's throughput never rolls, so retention silently did nothing and
   # disk usage grew unbounded (observed: ~46GiB and climbing ~2GiB/hour on
-  # what should be a 20-minute retention window). Roll every 5 minutes --
-  # well under the 20 min retention, so there's always at least one rolled,
-  # deletable segment sitting behind the active one.
-  log.roll.ms: 300000
+  # what should be a 20-minute retention window).
+  #
+  # Roll every 10 minutes -- under the 20 min retention (so there's always
+  # at least one rolled, deletable segment behind the active one), but not
+  # so frequent that it churns memory: an earlier 5-minute setting rolled
+  # 12 partitions' worth of segments (each closing/reopening 10MB
+  # pre-allocated index + timeindex files) often enough to visibly grow
+  # both JVM heap and page-cache working set within the first 35 minutes
+  # of uptime. 10 minutes halves that churn while still keeping retention
+  # working.
+  log.roll.ms: 600000
