@@ -20,6 +20,14 @@ redeployed on every app push.
   k3s, kept up to date by this CD pipeline. Same `convoy` namespace
   and component design as local; only the deployment mechanism differs.
 
+  **VM spec: 4 vCPU / 8GB RAM.** Sized from the current sum of all
+  component resource limits (kafka + app services + observability stack) plus
+  headroom for k3s system overhead — see implementation-spec.md §9 for the
+  breakdown. Common matches at this tier:
+  - DigitalOcean/Linode: "4 vCPU / 8GB" droplet
+  - Hetzner: CPX31
+  - AWS: `t3.large` / `m6i.large`
+
 ## 3. Pipeline Overview
 
 ```mermaid

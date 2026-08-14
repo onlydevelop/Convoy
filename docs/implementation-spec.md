@@ -123,24 +123,48 @@ flowchart LR
     KJ -. "creates topic on startup" .-> KF
 ```
 
-## 9. Resource Budget (k3d node: 2 vCPU / 4GB RAM)
+## 9. Resource Budget
 
-Total node capacity must also cover k3s system components (containerd,
-kube-proxy, coredns, metrics, etc.), so pod requests/limits below are set
-conservatively, not by dividing 2 vCPU/4GB evenly across the three
-components:
+The original estimate here was a k3d node sized at 2 vCPU / 4GB RAM, covering
+only kafka + the two app services. That no longer reflects reality: Kafka's
+JVM heap was later pinned explicitly (see infra/kafka/values.yaml) and the
+observability stack (infra/observability/values.yaml — Prometheus, Grafana,
+kube-state-metrics, node-exporter) was added on top, with no headroom left
+for it on the original 4GB budget. Current limits, summed from the actual
+Helm values in the repo:
+
+**App services:**
 
 | Component | CPU request | CPU limit | Mem request | Mem limit |
 |---|---|---|---|---|
-| kafka (1 broker, KRaft) | 500m | 1000m | 1Gi | 1.5Gi |
+| kafka (1 broker, KRaft) | 500m | 1000m | 1Gi | 1536Mi |
 | ingestion_service | 250m | 500m | 512Mi | 768Mi |
 | load_generator | 250m | 500m | 512Mi | 768Mi |
-| **Total (limits)** | | **2000m** | | **~3Gi** |
 
-This leaves headroom under the 4GB memory ceiling for k3s system pods and OS
-overhead, while limits sum to the full 2 vCPU. If pods get OOMKilled or
-throttled in practice, these numbers should be revisited — they're a
-starting estimate, not a benchmarked result.
+**Observability stack:**
+
+| Component | CPU request | CPU limit | Mem request | Mem limit |
+|---|---|---|---|---|
+| prometheus | 200m | 500m | 512Mi | 768Mi |
+| prometheusOperator | 100m | 200m | 128Mi | 256Mi |
+| grafana | 100m | 200m | 150Mi | 640Mi |
+| kube-state-metrics | 50m | 100m | 64Mi | 128Mi |
+| node-exporter | 50m | 100m | 32Mi | 64Mi |
+
+| | CPU limit | Mem limit |
+|---|---|---|
+| **Total (all components)** | **~3100m** | **~4.8Gi** |
+
+That total doesn't include k3s system components (containerd, kube-proxy,
+coredns, kubelet, metrics-server), which need their own headroom on top —
+roughly 1 vCPU / 1Gi based on the margin the original budget reserved for
+them.
+
+**Node sizing: 4 vCPU / 8GB RAM**, to give ~1 vCPU and ~3Gi of real headroom
+above the current sum of limits. See docs/cd-pipeline-spec.md §2 for the
+cloud VM this maps to. If pods get OOMKilled or throttled in practice, these
+numbers should be revisited — they're sized from configured limits, not a
+benchmarked load test.
 
 ## 10. Verification / Observability
 
