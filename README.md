@@ -1,4 +1,4 @@
-# Fleet Telemetry Ingestion System
+# Convoy
 
 A high-volume ingestion pipeline for a fleet of transport vehicles reporting
 geolocation, velocity, and related telemetry via REST, buffered through
@@ -31,14 +31,14 @@ All `make` targets take `ENV=local` (default) or `ENV=cloud`. With
 `ENV=cloud`, `kubectl`/`helm` run over SSH on the target VM — set
 `DEPLOY_USER` and `DEPLOY_HOST` accordingly. Image push/deploy targets
 require `GHCR_OWNER` (your GitHub username/org); `GHCR_REPO` defaults to
-`ingestion-system`.
+`convoy`.
 
 ## Setup — Local (k3d)
 
 1. Create the local cluster (one-time; not managed by the Makefile since
    it's cluster-level, not app-level):
    ```
-   k3d cluster create fleet-ingestion --servers 1 --agents 0
+   k3d cluster create convoy --servers 1 --agents 0
    ```
 2. Build and push both service images (GHCR packages are public, so this
    works the same locally as it does from CI):
@@ -52,8 +52,8 @@ require `GHCR_OWNER` (your GitHub username/org); `GHCR_REPO` defaults to
    ```
 4. Verify:
    ```
-   kubectl get pods -n fleet-ingestion
-   kubectl port-forward -n fleet-ingestion svc/ingestion-service 8080:8080
+   kubectl get pods -n convoy
+   kubectl port-forward -n convoy svc/ingestion-service 8080:8080
    curl localhost:8080/actuator/health
    ```
 
@@ -96,11 +96,11 @@ make teardown ENV=local                                    # local
 make teardown ENV=cloud DEPLOY_USER=<user> DEPLOY_HOST=<host>  # cloud
 ```
 
-This removes everything inside the cluster (`fleet-ingestion` namespace and
+This removes everything inside the cluster (`convoy` namespace and
 all it contains) but leaves the cluster itself running. To also remove the
 cluster:
 
-- **Local:** `k3d cluster delete fleet-ingestion`
+- **Local:** `k3d cluster delete convoy`
 - **Cloud:** `ssh <user>@<host> '/usr/local/bin/k3s-uninstall.sh'` (or just
   destroy the VM)
 

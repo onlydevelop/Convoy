@@ -1,4 +1,4 @@
-# Fleet Telemetry Ingestion System — Low-Level Design & Implementation
+# Convoy — Low-Level Design & Implementation
 
 ## Status
 Draft — iterative, in progress. Builds on [spec.md](spec.md).
@@ -28,13 +28,13 @@ Running on a single-node local k3d cluster changes that:
 ## 3. Cluster Topology
 
 - **Cluster:** k3d, single node, local machine.
-- **Namespace:** `fleet-ingestion` — all three components deployed here.
+- **Namespace:** `convoy` — all three components deployed here.
 - **Components (this iteration):**
   - `kafka` — Bitnami Kafka Helm chart, 1 broker
   - `ingestion_service` — Spring Boot REST API, Kafka producer
   - `load_generator` — Spring Boot app simulating the vehicle fleet
 - Components address each other via in-cluster k8s Service DNS
-  (`<service>.fleet-ingestion.svc.cluster.local`), no ingress/external
+  (`<service>.convoy.svc.cluster.local`), no ingress/external
   exposure needed at this stage since the load generator is in-cluster too.
 
 ## 4. Component: kafka
@@ -56,7 +56,7 @@ Running on a single-node local k3d cluster changes that:
     --topic vehicle.telemetry.raw \
     --partitions 12 \
     --replication-factor 1 \
-    --bootstrap-server kafka.fleet-ingestion.svc.cluster.local:9092
+    --bootstrap-server kafka.convoy.svc.cluster.local:9092
   ```
   This keeps topic config (partitions, RF) explicit and versioned rather than
   relying on broker defaults.
@@ -80,7 +80,7 @@ Running on a single-node local k3d cluster changes that:
 - **Container image:** multi-stage Dockerfile — Gradle build in a builder
   stage, run on `eclipse-temurin:21-jre-alpine` (Java 21 LTS).
 - **K8s manifests:** `Deployment` (1 replica) + `Service` (ClusterIP) in the
-  `fleet-ingestion` namespace. Resource requests/limits: see §9.
+  `convoy` namespace. Resource requests/limits: see §9.
 
 ## 6. Component: load_generator
 
@@ -111,7 +111,7 @@ Running on a single-node local k3d cluster changes that:
 ```mermaid
 flowchart LR
     subgraph k3d single-node cluster
-        subgraph ns["namespace: fleet-ingestion"]
+        subgraph ns["namespace: convoy"]
             LG["load_generator\n(Spring Boot Deployment)"]
             IS["ingestion_service\n(Spring Boot Deployment + Service)"]
             KJ["topic-init Job\n(kafka-topics.sh --create)"]

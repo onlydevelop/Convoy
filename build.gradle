@@ -4,7 +4,7 @@ plugins {
 }
 
 allprojects {
-    group = 'com.fleet.ingestion'
+    group = 'com.convoy'
     version = '0.1.0'
 
     repositories {

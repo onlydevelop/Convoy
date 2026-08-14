@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ingestion-service
-  namespace: fleet-ingestion
+  namespace: convoy
   labels:
     app: ingestion-service
 spec:
@@ -22,7 +22,7 @@ spec:
             - containerPort: 8080
           env:
             - name: KAFKA_BOOTSTRAP_SERVERS
-              value: kafka.fleet-ingestion.svc.cluster.local:9092
+              value: kafka.convoy.svc.cluster.local:9092
           resources:
             requests:
               cpu: 250m

@@ -1,4 +1,4 @@
-# Fleet Telemetry Ingestion System — CD Pipeline
+# Convoy — CD Pipeline
 
 ## Status
 Draft — iterative, in progress. Builds on [spec.md](spec.md) and
@@ -17,7 +17,7 @@ redeployed on every app push.
 - **Local (k3d):** unchanged, still used for dev/iteration, per
   implementation-spec.md.
 - **Cloud VM (k3s):** a separate, standing deployment — a single VM running
-  k3s, kept up to date by this CD pipeline. Same `fleet-ingestion` namespace
+  k3s, kept up to date by this CD pipeline. Same `convoy` namespace
   and component design as local; only the deployment mechanism differs.
 
 ## 3. Pipeline Overview
@@ -59,12 +59,12 @@ Single workflow, two jobs:
    ```
    kubectl set image deployment/ingestion-service \
      ingestion-service=ghcr.io/<owner>/<repo>/ingestion-service:<sha> \
-     -n fleet-ingestion
+     -n convoy
    kubectl set image deployment/load-generator \
      load-generator=ghcr.io/<owner>/<repo>/load-generator:<sha> \
-     -n fleet-ingestion
+     -n convoy
    ```
-3. Run `kubectl rollout status deployment/<name> -n fleet-ingestion` for
+3. Run `kubectl rollout status deployment/<name> -n convoy` for
    each, so the workflow fails visibly if the new pods don't come up
    healthy (backed by the Actuator health checks from
    implementation-spec.md §10).
@@ -88,7 +88,7 @@ authentication is needed on the VM's k3s to pull images.
 
 The VM needs to already have, before this pipeline can deploy anything:
 - k3s installed
-- `fleet-ingestion` namespace created
+- `convoy` namespace created
 - `kafka` deployed via Helm (per implementation-spec.md §4) and its topic
   created
 - `ingestion_service`/`load_generator` Deployments + Services created at
@@ -100,7 +100,7 @@ stage. Only needs to happen once per VM, unlike the app deploy which happens
 on every push. Indicative targets, run by hand from a developer machine with
 SSH/kubeconfig access to the VM:
 - `make bootstrap` — installs k3s (if not already), creates the
-  `fleet-ingestion` namespace, installs the Kafka Helm chart, runs the topic
+  `convoy` namespace, installs the Kafka Helm chart, runs the topic
   creation Job.
 - `make deploy-init` — applies the initial `Deployment`/`Service` manifests
   for `ingestion_service` and `load_generator`, so subsequent CD pushes have
@@ -111,7 +111,7 @@ SSH/kubeconfig access to the VM:
 **Manual, via a `Makefile` target** — no automatic rollback-on-failure in
 the pipeline. If a deploy misbehaves:
 - `make rollback SERVICE=ingestion-service` — runs
-  `kubectl rollout undo deployment/ingestion-service -n fleet-ingestion`
+  `kubectl rollout undo deployment/ingestion-service -n convoy`
   (and equivalent for `load-generator`).
 
 The GitHub Actions `deploy` job still fails visibly on a bad rollout (via

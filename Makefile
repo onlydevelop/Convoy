@@ -1,4 +1,4 @@
-# Build & deploy for the fleet telemetry ingestion system.
+# Build & deploy for Convoy, a fleet telemetry ingestion system.
 #
 # Requires: gradle wrapper (bundled), docker, envsubst (gettext), git (image
 # tagging), ssh (ENV=cloud). ENV=local also needs local kubectl/helm; ENV=cloud
@@ -27,13 +27,13 @@
 SHELL := /bin/bash
 
 SERVICES := ingestion-service load-generator
-NAMESPACE := fleet-ingestion
+NAMESPACE := convoy
 
 ENV ?= local
 TAG ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 
 GHCR_OWNER ?=
-GHCR_REPO ?= ingestion-system
+GHCR_REPO ?= convoy
 REGISTRY := ghcr.io/$(GHCR_OWNER)/$(GHCR_REPO)
 
 DEPLOY_USER ?=
@@ -118,7 +118,7 @@ helm-repo: ## Add/update the Bitnami Helm repo
 	$(HELM) repo add bitnami https://charts.bitnami.com/bitnami
 	$(HELM) repo update
 
-namespace: ## Apply the fleet-ingestion namespace
+namespace: ## Apply the convoy namespace
 	cat infra/k8s/namespace.yaml | $(KUBECTL) apply -f -
 
 deploy-infra: namespace ## Deploy the infra stack (kafka + topic)

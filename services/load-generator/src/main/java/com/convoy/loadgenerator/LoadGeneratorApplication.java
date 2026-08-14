@@ -1,4 +1,4 @@
-package com.fleet.ingestion.loadgenerator;
+package com.convoy.loadgenerator;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -5,7 +5,7 @@ spring:
   application:
     name: ingestion-service
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka.fleet-ingestion.svc.cluster.local:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka.convoy.svc.cluster.local:9092}
     producer:
       acks: "1"
 

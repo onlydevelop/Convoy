@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: kafka-topic-init
-  namespace: fleet-ingestion
+  namespace: convoy
 spec:
   backoffLimit: 3
   template:
@@ -19,4 +19,4 @@ spec:
               --topic vehicle.telemetry.raw
               --partitions 12
               --replication-factor 1
-              --bootstrap-server kafka.fleet-ingestion.svc.cluster.local:9092
+              --bootstrap-server kafka.convoy.svc.cluster.local:9092

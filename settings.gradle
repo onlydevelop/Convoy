@@ -1,4 +1,4 @@
-rootProject.name = 'fleet-ingestion-system'
+rootProject.name = 'convoy-system'
 
 include 'services:ingestion-service'
 include 'services:load-generator'

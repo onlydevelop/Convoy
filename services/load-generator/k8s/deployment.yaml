@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: load-generator
-  namespace: fleet-ingestion
+  namespace: convoy
   labels:
     app: load-generator
 spec:
@@ -22,7 +22,7 @@ spec:
             - containerPort: 8081
           env:
             - name: INGESTION_SERVICE_URL
-              value: http://ingestion-service.fleet-ingestion.svc.cluster.local:8080
+              value: http://ingestion-service.convoy.svc.cluster.local:8080
           resources:
             requests:
               cpu: 250m
