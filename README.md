@@ -1,5 +1,7 @@
 # Convoy
 
+![Convoy Grafana dashboard](docs/convoy_grafana.png)
+
 A high-volume ingestion pipeline for a fleet of transport vehicles reporting
 geolocation, velocity, and related telemetry via REST, buffered through
 Kafka. Design docs live in [docs/](docs/):
