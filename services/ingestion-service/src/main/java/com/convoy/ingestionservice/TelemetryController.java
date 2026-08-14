@@ -5,6 +5,8 @@ import jakarta.validation.Valid;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/v1")
 public class TelemetryController {
 
+    private static final Logger log = LoggerFactory.getLogger(TelemetryController.class);
+
     private final KafkaTemplate<String, TelemetryEvent> kafkaTemplate;
     private final String topic;
 
@@ -31,6 +35,8 @@ public class TelemetryController {
 
     @PostMapping("/telemetry")
     public ResponseEntity<Void> ingest(@Valid @RequestBody TelemetryEvent event) {
+        log.info("Received telemetry for vehicle {}", event.vehicleId());
+
         try {
             Instant.parse(event.timestamp());
         } catch (DateTimeParseException e) {
@@ -44,6 +50,7 @@ public class TelemetryController {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "queue unreachable", e);
         }
 
+        log.info("Queued telemetry for vehicle {}", event.vehicleId());
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 }

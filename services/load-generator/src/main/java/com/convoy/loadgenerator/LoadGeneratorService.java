@@ -55,13 +55,14 @@ public class LoadGeneratorService {
         int bucket = (int) (tick.getAndIncrement() % pingIntervalSeconds);
         for (VehicleState vehicle : buckets.get(bucket)) {
             TelemetryEvent payload = vehicle.step();
+            log.info("Sending telemetry for vehicle {}", payload.vehicleId());
             webClient.post()
                     .uri("/v1/telemetry")
                     .bodyValue(payload)
                     .retrieve()
                     .toBodilessEntity()
                     .subscribe(
-                            response -> { },
+                            response -> log.info("Telemetry accepted for vehicle {}: {}", payload.vehicleId(), response.getStatusCode()),
                             error -> log.warn("Telemetry POST failed for {}: {}", payload.vehicleId(), error.getMessage()));
         }
     }
