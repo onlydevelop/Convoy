@@ -89,11 +89,11 @@ data:
           ]
         },
 
-        { "id": 27, "type": "row", "title": "HTTP Errors (4xx/5xx)", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 } },
+        { "id": 27, "type": "row", "title": "Errors", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 } },
         {
           "id": 28, "type": "timeseries", "title": "ingestion-service error rate (inbound)",
           "description": "POST /v1/telemetry responses with a 4xx or 5xx status, by status code.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 19 },
           "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
           "targets": [
             {
@@ -106,13 +106,26 @@ data:
         {
           "id": 29, "type": "timeseries", "title": "load-generator error rate (outbound to ingestion-service)",
           "description": "Responses to load-generator's POST /v1/telemetry with a 4xx or 5xx status, by status code. Connection-level failures (no response at all) are reported separately by Micrometer as status=\"CLIENT_ERROR\" and aren't included here since they have no numeric status code.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 19 },
           "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
           "targets": [
             {
               "refId": "A",
               "expr": "sum(rate(http_client_requests_seconds_count{app=\"load-generator\", status=~\"4..|5..\"}[5m])) by (status)",
               "legendFormat": "{{status}}"
+            }
+          ]
+        },
+        {
+          "id": 30, "type": "timeseries", "title": "processing-service error rate (Kafka listener)",
+          "description": "processing-service has no HTTP endpoint serving business traffic (it's a Kafka consumer), so there's no 4xx/5xx to graph. Closest analog: rate of @KafkaListener invocations that failed (spring_kafka_listener_seconds_count{result=\"failure\"}), broken out by exception type.",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 19 },
+          "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(spring_kafka_listener_seconds_count{app=\"processing-service\", result=\"failure\"}[5m])) by (exception)",
+              "legendFormat": "{{exception}}"
             }
           ]
         },
