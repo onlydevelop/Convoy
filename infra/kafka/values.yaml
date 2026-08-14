@@ -13,21 +13,29 @@ kraft:
 
 controller:
   replicaCount: 1
+  # Default heapOpts is -XX:InitialRAMPercentage=75 -XX:MaxRAMPercentage=75,
+  # which ties the JVM's heap ceiling to whatever the container memory
+  # *limit* happens to be. That's why raising the limit (1536Mi -> 2560Mi)
+  # didn't fix the growing container_memory_working_set_bytes -- it just
+  # raised the heap ceiling to ~1920Mi along with it, giving G1 more room
+  # to keep growing before IHOP (35% of old-gen occupancy) pressures it
+  # into reclaiming. Working set kept climbing past 1.1GiB with no sign of
+  # stopping. Pinning an explicit, modest Xmx decouples heap sizing from
+  # the container limit entirely, so G1 is forced to actually collect
+  # well before using all the room the limit provides -- a real plateau
+  # instead of a slower climb toward a higher ceiling.
+  heapOpts: "-Xms512m -Xmx1024m"
   resources:
     requests:
       cpu: 500m
-      # 1Gi/1536Mi wasn't enough headroom once log.roll.ms (below) made
-      # segments actually roll every few minutes: JVM heap (MaxRAMPercentage
-      # 75%, so ~1152Mi ceiling on the old 1536Mi limit) plus the OS page
-      # cache churn from constantly closing/reopening 12 partitions' worth
-      # of segment files pushed memory.current to 77% of the limit and
-      # still climbing within 35 minutes of a fresh restart. Same failure
-      # shape as the Grafana OOMKills -- give it real headroom instead of
-      # tuning to the edge.
-      memory: 1.5Gi
+      memory: 1Gi
     limits:
       cpu: 1000m
-      memory: 2560Mi
+      # 1024Mi heap ceiling + metaspace/thread-stacks/page-cache for the
+      # 10-min segment rolls (infra/kafka/values.yaml log.roll.ms below):
+      # 1536Mi gives real margin above that without relying on container
+      # size to also cap the heap.
+      memory: 1536Mi
   persistence:
     size: 2Gi
 
