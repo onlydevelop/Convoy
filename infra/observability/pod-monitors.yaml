@@ -21,6 +21,12 @@ spec:
           - ingestion-service
           - load-generator
           - processing-service
+  # Copies the pod's "app" label onto each scraped sample, so the Grafana
+  # dashboard (infra/observability/grafana-dashboards.yaml) can filter/group
+  # per service — otherwise a PodMonitor's target has no label identifying
+  # which of the three services it came from.
+  podTargetLabels:
+    - app
   podMetricsEndpoints:
     - port: http
       path: /actuator/prometheus

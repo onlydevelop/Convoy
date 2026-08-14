@@ -22,4 +22,8 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /workspace/services/processing-service/build/libs/processing-service.jar app.jar
 EXPOSE 8082
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Pinned explicitly (rather than left to JVM ergonomics) so the G1 GC panels
+# in the Grafana JVM dashboard (infra/observability/grafana-dashboards.yaml)
+# always have data, regardless of the container's CPU/memory limits.
+ENV JAVA_OPTS="-XX:+UseG1GC"
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

@@ -163,11 +163,13 @@ redeploy-infra: ## Tear down and re-deploy the infra stack (kafka + topic)
 
 ## --- observability stack (prometheus, grafana; own namespace) ----------
 
-deploy-observability: namespace-observability ## Deploy kube-prometheus-stack + PodMonitors into the observability namespace
+deploy-observability: namespace-observability ## Deploy kube-prometheus-stack + PodMonitors + Grafana dashboards into the observability namespace
 	cat infra/observability/values.yaml | $(HELM) upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack --namespace $(OBSERVABILITY_NAMESPACE) -f -
 	cat infra/observability/pod-monitors.yaml | $(KUBECTL) apply -f -
+	cat infra/observability/grafana-dashboards.yaml | $(KUBECTL) apply -f -
 
 teardown-observability: ## Tear down the observability stack, including its namespace
+	$(KUBECTL) delete -f infra/observability/grafana-dashboards.yaml --ignore-not-found
 	$(KUBECTL) delete -f infra/observability/pod-monitors.yaml --ignore-not-found
 	-$(HELM) uninstall kube-prometheus-stack --namespace $(OBSERVABILITY_NAMESPACE)
 	$(KUBECTL) delete namespace $(OBSERVABILITY_NAMESPACE) --ignore-not-found
