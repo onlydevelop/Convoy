@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: load-generator
+  jackson:
+    property-naming-strategy: SNAKE_CASE
 
 app:
   target:
