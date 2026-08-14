@@ -1,5 +1,5 @@
 # Build context must be the repo root (multi-project Gradle build), e.g.:
-#   docker build -f services/ingestion-service/Dockerfile -t ingestion-service .
+#   docker build -f services/processing-service/Dockerfile -t processing-service .
 #
 # Uses the official Gradle image (pinned to the wrapper's version) instead of
 # the gradlew wrapper, so the build doesn't need to fetch the Gradle
@@ -12,14 +12,14 @@ COPY common/build.gradle common/build.gradle
 COPY services/ingestion-service/build.gradle services/ingestion-service/build.gradle
 COPY services/load-generator/build.gradle services/load-generator/build.gradle
 COPY services/processing-service/build.gradle services/processing-service/build.gradle
-RUN gradle :services:ingestion-service:dependencies --no-daemon
+RUN gradle :services:processing-service:dependencies --no-daemon
 
 COPY common/src common/src
-COPY services/ingestion-service/src services/ingestion-service/src
-RUN gradle :services:ingestion-service:bootJar --no-daemon
+COPY services/processing-service/src services/processing-service/src
+RUN gradle :services:processing-service:bootJar --no-daemon
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /workspace/services/ingestion-service/build/libs/ingestion-service.jar app.jar
-EXPOSE 8080
+COPY --from=build /workspace/services/processing-service/build/libs/processing-service.jar app.jar
+EXPOSE 8082
 ENTRYPOINT ["java", "-jar", "app.jar"]

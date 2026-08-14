@@ -11,6 +11,7 @@ COPY settings.gradle build.gradle ./
 COPY common/build.gradle common/build.gradle
 COPY services/ingestion-service/build.gradle services/ingestion-service/build.gradle
 COPY services/load-generator/build.gradle services/load-generator/build.gradle
+COPY services/processing-service/build.gradle services/processing-service/build.gradle
 RUN gradle :services:load-generator:dependencies --no-daemon
 
 COPY common/src common/src

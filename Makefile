@@ -33,7 +33,7 @@
 
 SHELL := /bin/bash
 
-SERVICES := ingestion-service load-generator
+SERVICES := ingestion-service load-generator processing-service
 NAMESPACE := convoy
 
 ENV ?= local
@@ -161,6 +161,8 @@ deploy-init: check-registry namespace ## One-time: create initial Deployments/Se
 	cat services/ingestion-service/k8s/service.yaml | $(KUBECTL) apply -f -
 	LOAD_GENERATOR_IMAGE=$(REGISTRY)/load-generator:$(TAG) \
 		envsubst < services/load-generator/k8s/deployment.yaml | $(KUBECTL) apply -f -
+	PROCESSING_SERVICE_IMAGE=$(REGISTRY)/processing-service:$(TAG) \
+		envsubst < services/processing-service/k8s/deployment.yaml | $(KUBECTL) apply -f -
 
 deploy-service: check-service check-registry ## Roll out a new image for one service (SERVICE=<name>)
 	$(KUBECTL) set image deployment/$(SERVICE) $(SERVICE)=$(REGISTRY)/$(SERVICE):$(TAG) -n $(NAMESPACE)
@@ -183,11 +185,13 @@ status: ## Show cluster/namespace status: nodes, deployments, pods, services
 	$(KUBECTL) get nodes -o wide
 	$(KUBECTL) get deployments,pods,svc -n $(NAMESPACE) -o wide
 
-health: ## Hit the /health endpoint on both services via kubectl exec
+health: ## Hit the /health endpoint on all services via kubectl exec
 	@echo "== ingestion-service (:8080/health) =="
 	@$(KUBECTL) exec -n $(NAMESPACE) deploy/ingestion-service -- wget -qO- http://localhost:8080/health && echo
 	@echo "== load-generator (:8081/health) =="
 	@$(KUBECTL) exec -n $(NAMESPACE) deploy/load-generator -- wget -qO- http://localhost:8081/health && echo
+	@echo "== processing-service (:8082/health) =="
+	@$(KUBECTL) exec -n $(NAMESPACE) deploy/processing-service -- wget -qO- http://localhost:8082/health && echo
 
 logs: ## Show recent logs for all services (or one via SERVICE=<name>; add FOLLOW=1 to tail -f)
 ifneq ($(SERVICE),)

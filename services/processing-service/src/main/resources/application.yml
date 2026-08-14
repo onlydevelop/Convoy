@@ -1,0 +1,38 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: processing-service
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka.convoy.svc.cluster.local:9092}
+    consumer:
+      group-id: ${CONSUMER_GROUP_ID:processing-service}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.convoy.telemetry
+        spring.json.value.default.type: com.convoy.telemetry.TelemetryEvent
+        spring.json.use.type.headers: false
+
+app:
+  kafka:
+    topic: ${INGESTION_TOPIC:vehicle.telemetry.raw}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
