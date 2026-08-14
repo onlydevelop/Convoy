@@ -48,7 +48,7 @@ data:
         {
           "id": 21, "type": "timeseries", "title": "Requests per second (all services)",
           "description": "Each service's request-rate metric is different by design: ingestion-service measures inbound HTTP it receives, load-generator measures outbound HTTP it sends, processing-service measures Kafka records it consumes. Not filtered by the Service dropdown above -- always shows all three so they're comparable on one graph.",
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 1 },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
           "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
           "targets": [
             {
@@ -65,6 +65,30 @@ data:
               "refId": "C",
               "expr": "sum(rate(spring_kafka_listener_seconds_count{app=\"processing-service\"}[5m]))",
               "legendFormat": "processing-service (Kafka records consumed)"
+            }
+          ]
+        },
+        {
+          "id": 2, "type": "timeseries", "title": "Container CPU usage (cores)",
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"convoy\", pod=~\"$app.*\"}[5m])) by (pod)",
+              "legendFormat": "{{pod}}"
+            }
+          ]
+        },
+        {
+          "id": 3, "type": "timeseries", "title": "Container memory working set",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"convoy\", pod=~\"$app.*\"}) by (pod)",
+              "legendFormat": "{{pod}}"
             }
           ]
         },
@@ -130,36 +154,10 @@ data:
           ]
         },
 
-        { "id": 1, "type": "row", "title": "Container Resources (cAdvisor)", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 } },
-        {
-          "id": 2, "type": "timeseries", "title": "Container CPU usage (cores)",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
-          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"convoy\", pod=~\"$app.*\"}[5m])) by (pod)",
-              "legendFormat": "{{pod}}"
-            }
-          ]
-        },
-        {
-          "id": 3, "type": "timeseries", "title": "Container memory working set",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
-          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "sum(container_memory_working_set_bytes{namespace=\"convoy\", pod=~\"$app.*\"}) by (pod)",
-              "legendFormat": "{{pod}}"
-            }
-          ]
-        },
-
-        { "id": 22, "type": "row", "title": "Kafka (kafka-controller-0)", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 } },
+        { "id": 22, "type": "row", "title": "Kafka (kafka-controller-0)", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 } },
         {
           "id": 23, "type": "timeseries", "title": "Kafka container CPU usage (cores)",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
           "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
           "targets": [
             {
@@ -171,7 +169,7 @@ data:
         },
         {
           "id": 24, "type": "timeseries", "title": "Kafka container memory working set",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
           "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
           "targets": [
             {
@@ -183,7 +181,7 @@ data:
         },
         {
           "id": 25, "type": "timeseries", "title": "Kafka disk usage (data-kafka-controller-0 PVC)",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 45 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
           "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
           "targets": [
             {
@@ -201,7 +199,7 @@ data:
         {
           "id": 26, "type": "timeseries", "title": "Queue length (consumer lag, records behind)",
           "description": "Client-side lag reported by processing-service's Kafka consumer -- how many records on vehicle.telemetry.raw it hasn't caught up to yet, summed across partitions. This is a consumer-side proxy for Kafka's own queue depth; the Bitnami chart doesn't have its JMX/broker metrics exporter enabled, so there's no broker-side request-queue metric to graph directly.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 45 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
           "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
           "targets": [
             {
@@ -212,10 +210,10 @@ data:
           ]
         },
 
-        { "id": 4, "type": "row", "title": "JVM Process CPU", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 } },
+        { "id": 4, "type": "row", "title": "JVM Process CPU", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 44 } },
         {
           "id": 5, "type": "timeseries", "title": "Process CPU usage (%)",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 54 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 45 },
           "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "min": 0 }, "overrides": [] },
           "targets": [
             { "refId": "A", "expr": "process_cpu_usage{app=~\"$app\"} * 100", "legendFormat": "{{app}} process" }
@@ -223,17 +221,17 @@ data:
         },
         {
           "id": 6, "type": "timeseries", "title": "System CPU usage (%)",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 54 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 45 },
           "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "min": 0 }, "overrides": [] },
           "targets": [
             { "refId": "A", "expr": "system_cpu_usage{app=~\"$app\"} * 100", "legendFormat": "{{app}} node" }
           ]
         },
 
-        { "id": 7, "type": "row", "title": "JVM Memory", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 62 } },
+        { "id": 7, "type": "row", "title": "JVM Memory", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 } },
         {
           "id": 8, "type": "timeseries", "title": "Heap used vs max",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 63 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 54 },
           "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
           "targets": [
             { "refId": "A", "expr": "jvm_memory_used_bytes{app=~\"$app\", area=\"heap\"}", "legendFormat": "{{app}} used" },
@@ -242,7 +240,7 @@ data:
         },
         {
           "id": 9, "type": "timeseries", "title": "Non-heap used",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 63 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 54 },
           "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
           "targets": [
             { "refId": "A", "expr": "jvm_memory_used_bytes{app=~\"$app\", area=\"nonheap\"}", "legendFormat": "{{app}} {{id}}" }
@@ -250,17 +248,17 @@ data:
         },
         {
           "id": 10, "type": "timeseries", "title": "G1 memory pools (Eden / Survivor / Old)",
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 71 },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 62 },
           "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
           "targets": [
             { "refId": "A", "expr": "jvm_memory_used_bytes{app=~\"$app\", id=~\"G1.*\"}", "legendFormat": "{{app}} {{id}}" }
           ]
         },
 
-        { "id": 11, "type": "row", "title": "G1 Garbage Collection", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 79 } },
+        { "id": 11, "type": "row", "title": "G1 Garbage Collection", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 70 } },
         {
           "id": 12, "type": "timeseries", "title": "GC pause rate by collection type",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 80 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 71 },
           "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
           "targets": [
             { "refId": "A", "expr": "rate(jvm_gc_pause_seconds_count{app=~\"$app\"}[5m])", "legendFormat": "{{app}} {{gc}}/{{action}}" }
@@ -268,7 +266,7 @@ data:
         },
         {
           "id": 13, "type": "timeseries", "title": "Time spent in GC (%)",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 80 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 71 },
           "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
           "targets": [
             { "refId": "A", "expr": "rate(jvm_gc_pause_seconds_sum{app=~\"$app\"}[5m])", "legendFormat": "{{app}} {{gc}}" }
@@ -276,7 +274,7 @@ data:
         },
         {
           "id": 14, "type": "timeseries", "title": "Max GC pause duration",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 88 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 79 },
           "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
           "targets": [
             { "refId": "A", "expr": "jvm_gc_pause_seconds_max{app=~\"$app\"}", "legendFormat": "{{app}} {{gc}}/{{action}}" }
@@ -284,7 +282,7 @@ data:
         },
         {
           "id": 15, "type": "timeseries", "title": "Allocation & promotion rate",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 88 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 79 },
           "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
           "targets": [
             { "refId": "A", "expr": "rate(jvm_gc_memory_allocated_bytes_total{app=~\"$app\"}[5m])", "legendFormat": "{{app}} allocated" },
@@ -293,7 +291,7 @@ data:
         },
         {
           "id": 16, "type": "timeseries", "title": "Old gen live data size vs max (post full-GC)",
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 96 },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 87 },
           "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
           "targets": [
             { "refId": "A", "expr": "jvm_gc_live_data_size_bytes{app=~\"$app\"}", "legendFormat": "{{app}} live" },
