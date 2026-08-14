@@ -1,0 +1,27 @@
+# Scrapes the convoy app services' Actuator Prometheus endpoint directly off
+# the pods. PodMonitor (rather than ServiceMonitor) because load-generator
+# and processing-service have no Service object — nothing in the cluster
+# calls them over HTTP, so none was ever created for them.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: convoy-services
+  namespace: observability
+  labels:
+    release: kube-prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames:
+      - convoy
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - ingestion-service
+          - load-generator
+          - processing-service
+  podMetricsEndpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s

@@ -1,0 +1,105 @@
+# prometheus-community/kube-prometheus-stack values.
+#
+# NOTE on sizing: docs/implementation-spec.md §9 budgets the local k3d node
+# (2 vCPU / 4GB) down to the vCPU with just kafka + the app services — there
+# is no headroom left for this stack on that node. Run this on ENV=cloud (or
+# a bigger local node) rather than the default k3d dev cluster. Resources
+# below are trimmed from the chart defaults but still additive on top of the
+# convoy namespace's own budget.
+#
+# Alertmanager is disabled: nothing in this project pages anyone yet, and it
+# would just be one more pod to fit on an already-tight node. Re-enable it
+# once there are actual alert rules worth routing.
+alertmanager:
+  enabled: false
+
+# Same reasoning as kafka's single-broker sizing: keep one Prometheus
+# replica, short retention, and a small PVC rather than the chart's defaults.
+prometheus:
+  prometheusSpec:
+    replicas: 1
+    retention: 2d
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+    # Pick up PodMonitors regardless of which release/namespace they carry
+    # labels for, so infra/observability/pod-monitors.yaml (in this
+    # namespace) can target pods over in the convoy namespace.
+    podMonitorSelectorNilUsesHelmValues: false
+    podMonitorNamespaceSelector: {}
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+grafana:
+  enabled: true
+  # No PVC: dashboards/datasources are provisioned from this chart, so an
+  # ephemeral Grafana pod is fine and one less volume to fit on the node.
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  defaultDashboardsEnabled: true
+
+kubeStateMetrics:
+  enabled: true
+
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+nodeExporter:
+  enabled: true
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+# k3s ships its own kubelet/apiserver/etcd metrics differently than a
+# kubeadm cluster; the umbrella chart's default scrape configs for these
+# assume kubeadm-style static pods and just generate noisy "down" targets
+# on k3s. Turn them off rather than chase false alarms.
+kubeApiServer:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeProxy:
+  enabled: false

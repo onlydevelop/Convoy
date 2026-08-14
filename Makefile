@@ -15,6 +15,8 @@
 #   make deploy-services ENV=cloud                   # roll out all app services
 #   make deploy-infra ENV=local                      # namespace + kafka + topic
 #   make redeploy-infra ENV=local                     # tear down + re-deploy the infra stack (kafka + topic)
+#   make deploy-observability ENV=local               # observability namespace + kube-prometheus-stack + PodMonitors
+#   make teardown-observability ENV=local              # tear down the observability stack (+ its namespace)
 #   make redeploy-app ENV=local GHCR_OWNER=...        # tear down + rebuild/push/deploy all app services
 #   make bootstrap ENV=cloud                         # one-time: infra + initial app manifests
 #   make deploy-all ENV=cloud                        # infra + all services
@@ -35,6 +37,7 @@ SHELL := /bin/bash
 
 SERVICES := ingestion-service load-generator processing-service
 NAMESPACE := convoy
+OBSERVABILITY_NAMESPACE := observability
 
 ENV ?= local
 TAG ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
@@ -65,10 +68,11 @@ endif
 
 .PHONY: help check-registry check-service check-cloud setup-cloud \
         build build-all image image-all push push-all \
-        helm-repo namespace ghcr-secret deploy-infra deploy-init \
+        helm-repo namespace namespace-observability ghcr-secret deploy-infra deploy-init \
+        deploy-observability \
         deploy-service deploy-services deploy-all rollback status health logs bootstrap clean \
         redeploy-infra redeploy-app \
-        teardown-services teardown-infra teardown
+        teardown-services teardown-infra teardown-observability teardown
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /'
@@ -127,12 +131,16 @@ push-all: check-registry ## Docker push all service images
 
 ## --- infra stack (kafka, future: database, ...) ------------------------
 
-helm-repo: ## Add/update the Bitnami Helm repo
+helm-repo: ## Add/update the Bitnami + prometheus-community Helm repos
 	$(HELM) repo add bitnami https://charts.bitnami.com/bitnami
+	$(HELM) repo add prometheus-community https://prometheus-community.github.io/helm-charts
 	$(HELM) repo update
 
 namespace: ## Apply the convoy namespace
 	cat infra/k8s/namespace.yaml | $(KUBECTL) apply -f -
+
+namespace-observability: ## Apply the observability namespace
+	cat infra/observability/namespace.yaml | $(KUBECTL) apply -f -
 
 ghcr-secret: check-registry namespace ## Create/update the ghcr-pull imagePullSecret (needed if the GHCR packages are private)
 ifeq ($(GHCR_TOKEN),)
@@ -152,6 +160,17 @@ deploy-infra: namespace ## Deploy the infra stack (kafka + topic)
 redeploy-infra: ## Tear down and re-deploy the infra stack (kafka + topic)
 	$(MAKE) teardown-infra ENV=$(ENV) DEPLOY_USER=$(DEPLOY_USER) DEPLOY_HOST=$(DEPLOY_HOST)
 	$(MAKE) deploy-infra ENV=$(ENV) DEPLOY_USER=$(DEPLOY_USER) DEPLOY_HOST=$(DEPLOY_HOST)
+
+## --- observability stack (prometheus, grafana; own namespace) ----------
+
+deploy-observability: namespace-observability ## Deploy kube-prometheus-stack + PodMonitors into the observability namespace
+	cat infra/observability/values.yaml | $(HELM) upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack --namespace $(OBSERVABILITY_NAMESPACE) -f -
+	cat infra/observability/pod-monitors.yaml | $(KUBECTL) apply -f -
+
+teardown-observability: ## Tear down the observability stack, including its namespace
+	$(KUBECTL) delete -f infra/observability/pod-monitors.yaml --ignore-not-found
+	-$(HELM) uninstall kube-prometheus-stack --namespace $(OBSERVABILITY_NAMESPACE)
+	$(KUBECTL) delete namespace $(OBSERVABILITY_NAMESPACE) --ignore-not-found
 
 ## --- service stack (ingestion_service, load_generator) -----------------
 
@@ -184,6 +203,7 @@ rollback: check-service ## Undo the last rollout for one service (SERVICE=<name>
 status: ## Show cluster/namespace status: nodes, deployments, pods, services
 	$(KUBECTL) get nodes -o wide
 	$(KUBECTL) get deployments,pods,svc -n $(NAMESPACE) -o wide
+	-$(KUBECTL) get deployments,pods,svc -n $(OBSERVABILITY_NAMESPACE) -o wide
 
 health: ## Hit the /health endpoint on all services via kubectl exec
 	@echo "== ingestion-service (:8080/health) =="

@@ -21,7 +21,8 @@ spec:
         - name: processing-service
           image: ${PROCESSING_SERVICE_IMAGE}
           ports:
-            - containerPort: 8082
+            - name: http
+              containerPort: 8082
           env:
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: kafka.convoy.svc.cluster.local:9092

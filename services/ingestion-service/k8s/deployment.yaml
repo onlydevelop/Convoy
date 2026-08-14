@@ -21,7 +21,8 @@ spec:
         - name: ingestion-service
           image: ${INGESTION_SERVICE_IMAGE}
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
           env:
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: kafka.convoy.svc.cluster.local:9092

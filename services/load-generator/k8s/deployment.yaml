@@ -21,7 +21,8 @@ spec:
         - name: load-generator
           image: ${LOAD_GENERATOR_IMAGE}
           ports:
-            - containerPort: 8081
+            - name: http
+              containerPort: 8081
           env:
             - name: INGESTION_SERVICE_URL
               value: http://ingestion-service.convoy.svc.cluster.local:8080
