@@ -111,3 +111,7 @@ If a deploy misbehaves:
 ```
 make rollback SERVICE=ingestion-service ENV=cloud DEPLOY_USER=<user> DEPLOY_HOST=<host>
 ```
+
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE).
