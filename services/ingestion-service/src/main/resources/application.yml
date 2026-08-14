@@ -29,6 +29,15 @@ app:
     topic: ${INGESTION_TOPIC:vehicle.telemetry.raw}
 
 management:
+  server:
+    # Separate port so actuator health checks have their own connector/thread
+    # pool, isolated from the ingestion request pool. Otherwise, under load,
+    # liveness/readiness probes queue behind backed-up /v1/telemetry requests
+    # (each holding a thread for up to 3s waiting on the Kafka producer ack)
+    # and time out against the 1s probe timeout even though the app is alive
+    # -- kubelet then kills and restarts the container, which just repeats
+    # the same saturation on the next boot. This was causing a crash loop.
+    port: 8081
   endpoints:
     web:
       exposure:
