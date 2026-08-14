@@ -17,6 +17,7 @@
 #   make bootstrap ENV=cloud                         # one-time: infra + initial app manifests
 #   make deploy-all ENV=cloud                        # infra + all services
 #   make rollback SERVICE=ingestion-service ENV=cloud
+#   make status ENV=local                             # nodes/deployments/pods/svc
 #   make teardown ENV=local                          # delete everything (services, infra, namespace)
 #   make setup-cloud ENV=cloud DEPLOY_USER=... DEPLOY_HOST=...  # install k3s+helm on a fresh VM
 #
@@ -57,7 +58,7 @@ endif
 .PHONY: help check-registry check-service check-cloud setup-cloud \
         build build-all image image-all push push-all \
         helm-repo namespace ghcr-secret deploy-infra deploy-init \
-        deploy-service deploy-services deploy-all rollback bootstrap clean \
+        deploy-service deploy-services deploy-all rollback status bootstrap clean \
         teardown-services teardown-infra teardown
 
 help: ## Show this help
@@ -157,6 +158,10 @@ deploy-services: check-registry ## Roll out a new image for all app services
 
 rollback: check-service ## Undo the last rollout for one service (SERVICE=<name>)
 	$(KUBECTL) rollout undo deployment/$(SERVICE) -n $(NAMESPACE)
+
+status: ## Show cluster/namespace status: nodes, deployments, pods, services
+	$(KUBECTL) get nodes -o wide
+	$(KUBECTL) get deployments,pods,svc -n $(NAMESPACE) -o wide
 
 ## --- whole stack ---------------------------------------------------------
 
