@@ -59,10 +59,13 @@ grafana:
   resources:
     requests:
       cpu: 100m
-      memory: 128Mi
+      memory: 150Mi
     limits:
       cpu: 200m
-      memory: 256Mi
+      # 256Mi OOMKilled Grafana in practice (main container + two watching
+      # sidecars for dashboards/datasources all share the pod's cgroup);
+      # 384Mi has held up under normal browsing.
+      memory: 384Mi
   defaultDashboardsEnabled: true
 
 kubeStateMetrics:
