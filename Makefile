@@ -10,6 +10,7 @@
 #   make build-all                                 # build all services
 #   make image SERVICE=ingestion-service            # docker build one image
 #   make push SERVICE=ingestion-service              # docker push one image
+#   make ghcr-secret GHCR_OWNER=... GHCR_TOKEN=...   # imagePullSecret, needed if GHCR packages are private
 #   make deploy-service SERVICE=ingestion-service ENV=local   # roll out one service
 #   make deploy-services ENV=cloud                   # roll out all app services
 #   make deploy-infra ENV=local                      # namespace + kafka + topic
@@ -34,6 +35,8 @@ TAG ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 
 GHCR_OWNER ?=
 GHCR_REPO ?= convoy
+GHCR_USER ?= $(GHCR_OWNER)
+GHCR_TOKEN ?=
 REGISTRY := ghcr.io/$(GHCR_OWNER)/$(GHCR_REPO)
 
 DEPLOY_USER ?=
@@ -53,7 +56,7 @@ endif
 
 .PHONY: help check-registry check-service check-cloud setup-cloud \
         build build-all image image-all push push-all \
-        helm-repo namespace deploy-infra deploy-init \
+        helm-repo namespace ghcr-secret deploy-infra deploy-init \
         deploy-service deploy-services deploy-all rollback bootstrap clean \
         teardown-services teardown-infra teardown
 
@@ -120,6 +123,17 @@ helm-repo: ## Add/update the Bitnami Helm repo
 
 namespace: ## Apply the convoy namespace
 	cat infra/k8s/namespace.yaml | $(KUBECTL) apply -f -
+
+ghcr-secret: check-registry namespace ## Create/update the ghcr-pull imagePullSecret (needed if the GHCR packages are private)
+ifeq ($(GHCR_TOKEN),)
+	$(error GHCR_TOKEN is not set, e.g. make ghcr-secret GHCR_OWNER=youruser GHCR_TOKEN=ghp_xxx -- a PAT with read:packages scope)
+endif
+	$(KUBECTL) create secret docker-registry ghcr-pull \
+		--docker-server=ghcr.io \
+		--docker-username=$(GHCR_USER) \
+		--docker-password=$(GHCR_TOKEN) \
+		--namespace $(NAMESPACE) \
+		--dry-run=client -o yaml | $(KUBECTL) apply -f -
 
 deploy-infra: namespace ## Deploy the infra stack (kafka + topic)
 	cat infra/kafka/values.yaml | $(HELM) upgrade --install kafka bitnami/kafka --namespace $(NAMESPACE) -f -

@@ -10,7 +10,9 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: create-topic
-          image: bitnami/kafka:3.8
+          # bitnamilegacy, not bitnami: Broadcom pulled pinned tags from the free
+          # bitnami/* Docker Hub images in Aug 2025 (see infra/kafka/values.yaml).
+          image: bitnamilegacy/kafka:3.8
           command:
             - /bin/bash
             - -c

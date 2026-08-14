@@ -33,6 +33,15 @@ All `make` targets take `ENV=local` (default) or `ENV=cloud`. With
 require `GHCR_OWNER` (your GitHub username/org); `GHCR_REPO` defaults to
 `convoy`.
 
+By default GHCR packages are assumed public, so no pull credentials are
+needed in-cluster. If you make the packages private, create the
+`ghcr-pull` imagePullSecret once before bootstrapping/deploying:
+```
+make ghcr-secret ENV=local GHCR_OWNER=<your-github-user> GHCR_TOKEN=<PAT with read:packages>
+```
+(add `ENV=cloud DEPLOY_USER=... DEPLOY_HOST=...` for a cloud cluster). Both
+app Deployments already reference `imagePullSecrets: [ghcr-pull]`.
+
 ## Setup — Local (k3d)
 
 1. Create the local cluster (one-time; not managed by the Makefile since

@@ -1,6 +1,13 @@
 # Bitnami Kafka chart values for single-node KRaft mode (implementation-spec.md §4).
 # KRaft combined mode: controller nodes also act as brokers, so broker.replicaCount
 # stays at 0 and controller.replicaCount is the only node count that matters.
+#
+# image.repository points at bitnamilegacy/kafka because Broadcom pulled the free
+# bitnami/* images off Docker Hub in Aug 2025, leaving only the "latest" tag there;
+# the full pinned-tag catalog now lives under bitnamilegacy/*.
+image:
+  repository: bitnamilegacy/kafka
+
 kraft:
   enabled: true
 
