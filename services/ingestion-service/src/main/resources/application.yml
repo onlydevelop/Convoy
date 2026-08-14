@@ -4,10 +4,16 @@ server:
 spring:
   application:
     name: ingestion-service
+  jackson:
+    property-naming-strategy: SNAKE_CASE
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka.convoy.svc.cluster.local:9092}
     producer:
       acks: "1"
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
 
 app:
   kafka:
