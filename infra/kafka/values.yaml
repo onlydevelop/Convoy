@@ -48,3 +48,12 @@ overrideConfiguration:
   # log.retention.check.interval.ms (default 5 min), so data can briefly
   # outlive 20 minutes before the next check sweeps it.
   log.retention.minutes: 20
+  # retention.ms only makes a segment *eligible* for deletion once it's
+  # rolled (closed) -- it never touches the active segment currently being
+  # appended to. Left at the 168h/1GiB defaults, a single partition at this
+  # topic's throughput never rolls, so retention silently did nothing and
+  # disk usage grew unbounded (observed: ~46GiB and climbing ~2GiB/hour on
+  # what should be a 20-minute retention window). Roll every 5 minutes --
+  # well under the 20 min retention, so there's always at least one rolled,
+  # deletable segment sitting behind the active one.
+  log.roll.ms: 300000
