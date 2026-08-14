@@ -177,6 +177,31 @@ data:
           "targets": [
             { "refId": "A", "expr": "process_uptime_seconds{app=~\"$app\"}", "legendFormat": "{{app}}" }
           ]
+        },
+
+        { "id": 20, "type": "row", "title": "Throughput", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 69 } },
+        {
+          "id": 21, "type": "timeseries", "title": "Requests per second (all services)",
+          "description": "Each service's request-rate metric is different by design: ingestion-service measures inbound HTTP it receives, load-generator measures outbound HTTP it sends, processing-service measures Kafka records it consumes. Not filtered by the Service dropdown above -- always shows all three so they're comparable on one graph.",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 70 },
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(http_server_requests_seconds_count{app=\"ingestion-service\", uri=\"/v1/telemetry\"}[5m]))",
+              "legendFormat": "ingestion-service (inbound HTTP)"
+            },
+            {
+              "refId": "B",
+              "expr": "sum(rate(http_client_requests_seconds_count{app=\"load-generator\", uri=\"/v1/telemetry\"}[5m]))",
+              "legendFormat": "load-generator (outbound HTTP)"
+            },
+            {
+              "refId": "C",
+              "expr": "sum(rate(spring_kafka_listener_seconds_count{app=\"processing-service\"}[5m]))",
+              "legendFormat": "processing-service (Kafka records consumed)"
+            }
+          ]
         }
       ]
     }
