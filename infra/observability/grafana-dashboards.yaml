@@ -3,6 +3,14 @@
 # namespace (default sidecar.dashboards config, unchanged in values.yaml)
 # and loads their "*.json" data keys as dashboards — no manual Grafana UI
 # import needed after `make deploy-observability`.
+#
+# The container CPU/memory panels deliberately don't filter on
+# container!="" — this cluster's kubelet/cAdvisor (k3s on Rancher Desktop's
+# Alpine VM) only emits the whole-pod cgroup rollup (no container label at
+# all, not even ""), so that filter silently zeroed both panels. Since every
+# convoy pod runs exactly one container, summing without the filter gives
+# the same number and works regardless of whether a given cluster's cAdvisor
+# does emit per-container rows.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -44,7 +52,7 @@ data:
           "targets": [
             {
               "refId": "A",
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"convoy\", pod=~\"$app.*\", container!=\"\", container!=\"POD\"}[5m])) by (pod)",
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"convoy\", pod=~\"$app.*\"}[5m])) by (pod)",
               "legendFormat": "{{pod}}"
             }
           ]
@@ -56,7 +64,7 @@ data:
           "targets": [
             {
               "refId": "A",
-              "expr": "sum(container_memory_working_set_bytes{namespace=\"convoy\", pod=~\"$app.*\", container!=\"\", container!=\"POD\"}) by (pod)",
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"convoy\", pod=~\"$app.*\"}) by (pod)",
               "legendFormat": "{{pod}}"
             }
           ]
