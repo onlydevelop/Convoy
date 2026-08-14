@@ -1,5 +1,6 @@
 package com.convoy.ingestionservice;
 
+import com.convoy.telemetry.TelemetryEvent;
 import jakarta.validation.Valid;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;

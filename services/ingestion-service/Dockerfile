@@ -8,10 +8,12 @@ FROM gradle:8.10.2-jdk21-alpine AS build
 WORKDIR /workspace
 
 COPY settings.gradle build.gradle ./
+COPY common/build.gradle common/build.gradle
 COPY services/ingestion-service/build.gradle services/ingestion-service/build.gradle
 COPY services/load-generator/build.gradle services/load-generator/build.gradle
 RUN gradle :services:ingestion-service:dependencies --no-daemon
 
+COPY common/src common/src
 COPY services/ingestion-service/src services/ingestion-service/src
 RUN gradle :services:ingestion-service:bootJar --no-daemon
 

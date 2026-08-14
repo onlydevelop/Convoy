@@ -1,5 +1,6 @@
 package com.convoy.loadgenerator;
 
+import com.convoy.telemetry.TelemetryEvent;
 import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +54,7 @@ public class LoadGeneratorService {
     void tick() {
         int bucket = (int) (tick.getAndIncrement() % pingIntervalSeconds);
         for (VehicleState vehicle : buckets.get(bucket)) {
-            TelemetryPayload payload = vehicle.step();
+            TelemetryEvent payload = vehicle.step();
             webClient.post()
                     .uri("/v1/telemetry")
                     .bodyValue(payload)

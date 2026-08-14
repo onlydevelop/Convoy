@@ -1,4 +1,4 @@
-package com.convoy.ingestionservice;
+package com.convoy.telemetry;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;

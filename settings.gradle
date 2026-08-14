@@ -1,4 +1,5 @@
 rootProject.name = 'convoy-system'
 
+include 'common'
 include 'services:ingestion-service'
 include 'services:load-generator'

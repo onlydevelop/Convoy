@@ -1,5 +1,6 @@
 package com.convoy.loadgenerator;
 
+import com.convoy.telemetry.TelemetryEvent;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -27,7 +28,7 @@ final class VehicleState {
         this.headingDeg = random.nextInt(0, 360);
     }
 
-    TelemetryPayload step() {
+    TelemetryEvent step() {
         ThreadLocalRandom random = ThreadLocalRandom.current();
 
         headingDeg = Math.floorMod(headingDeg + random.nextInt(-10, 11), 360);
@@ -38,7 +39,7 @@ final class VehicleState {
         latitude = clamp(latitude + Math.cos(headingRad) * distanceDeg, -90.0, 90.0);
         longitude = wrapLongitude(longitude + Math.sin(headingRad) * distanceDeg);
 
-        return new TelemetryPayload(
+        return new TelemetryEvent(
                 vehicleId, driverId, java.time.Instant.now().toString(),
                 latitude, longitude, speedKph, headingDeg);
     }
