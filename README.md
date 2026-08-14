@@ -91,10 +91,15 @@ out changes.
    [docs/cd-pipeline-spec.md](docs/cd-pipeline-spec.md)). To deploy
    manually instead:
    ```
-   make image-all push-all GHCR_OWNER=<your-github-user>
+   make image-all push-all ENV=cloud GHCR_OWNER=<your-github-user>
    make deploy-services ENV=cloud GHCR_OWNER=<your-github-user> \
      DEPLOY_USER=<user> DEPLOY_HOST=<host>
    ```
+   **`ENV=cloud` matters here even though `image`/`push` don't touch the
+   VM directly**: it cross-builds for `linux/amd64` via `docker buildx`
+   instead of the dev machine's native architecture. Skipping it (e.g. on
+   Apple Silicon) produces images the VM can't run —
+   `exec /bin/sh: exec format error` in `kubectl logs` is the symptom.
 
 ## Teardown
 

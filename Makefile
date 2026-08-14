@@ -9,7 +9,8 @@
 #   make build SERVICE=ingestion-service          # build one service's jar
 #   make build-all                                 # build all services
 #   make image SERVICE=ingestion-service            # docker build one image
-#   make push SERVICE=ingestion-service              # docker push one image
+#   make image SERVICE=ingestion-service ENV=cloud   # cross-build for linux/amd64 (the VM's arch) + push, via buildx
+#   make push SERVICE=ingestion-service              # docker push one image (no-op for ENV=cloud; image already pushed)
 #   make ghcr-secret GHCR_OWNER=... GHCR_TOKEN=...   # imagePullSecret, needed if GHCR packages are private
 #   make deploy-service SERVICE=ingestion-service ENV=local   # roll out one service
 #   make deploy-services ENV=cloud                   # roll out all app services
@@ -32,6 +33,12 @@
 # (e.g. k3d). ENV=cloud runs them over SSH on the target VM, per
 # docs/cd-pipeline-spec.md. `bootstrap ENV=cloud` runs setup-cloud first
 # automatically, so a fresh VM only needs SSH access + `make bootstrap`.
+#
+# ENV=cloud also changes how images are built: `image`/`image-all` cross-build
+# for linux/amd64 via `docker buildx --push` instead of a native `docker
+# build`, since the cloud VM's arch may differ from the dev machine's (e.g.
+# Apple Silicon locally vs. an amd64 VPS). The push happens as part of the
+# buildx build itself, so `push`/`push-all` are a no-op under ENV=cloud.
 
 SHELL := /bin/bash
 
@@ -117,17 +124,25 @@ build-all: ## Build all services
 
 ## --- image / push -----------------------------------------------------
 
-image: check-service check-registry ## Docker build one service's image (SERVICE=<name>)
+image: check-service check-registry ## Docker build one service's image (SERVICE=<name>); ENV=cloud cross-builds for linux/amd64 + pushes via buildx
+ifeq ($(ENV),cloud)
+	docker buildx build --platform linux/amd64 -f services/$(SERVICE)/Dockerfile -t $(REGISTRY)/$(SERVICE):$(TAG) --push .
+else
 	docker build -f services/$(SERVICE)/Dockerfile -t $(REGISTRY)/$(SERVICE):$(TAG) .
+endif
 
-image-all: check-registry ## Docker build all service images
-	@for s in $(SERVICES); do $(MAKE) image SERVICE=$$s; done
+image-all: check-registry ## Docker build all service images (ENV=cloud also pushes, see `image`)
+	@for s in $(SERVICES); do $(MAKE) image SERVICE=$$s ENV=$(ENV) GHCR_OWNER=$(GHCR_OWNER) GHCR_REPO=$(GHCR_REPO) TAG=$(TAG); done
 
-push: check-service check-registry ## Docker push one service's image (SERVICE=<name>)
+push: check-service check-registry ## Docker push one service's image (SERVICE=<name>); no-op for ENV=cloud (image already pushed by `image`)
+ifeq ($(ENV),cloud)
+	@echo "ENV=cloud: $(SERVICE) was already pushed by 'make image' (buildx --push). Skipping."
+else
 	docker push $(REGISTRY)/$(SERVICE):$(TAG)
+endif
 
-push-all: check-registry ## Docker push all service images
-	@for s in $(SERVICES); do $(MAKE) push SERVICE=$$s; done
+push-all: check-registry ## Docker push all service images (no-op for ENV=cloud, see `push`)
+	@for s in $(SERVICES); do $(MAKE) push SERVICE=$$s ENV=$(ENV) GHCR_OWNER=$(GHCR_OWNER) GHCR_REPO=$(GHCR_REPO) TAG=$(TAG); done
 
 ## --- infra stack (kafka, future: database, ...) ------------------------
 
