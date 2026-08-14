@@ -29,3 +29,15 @@ broker:
 listeners:
   client:
     protocol: PLAINTEXT
+
+# Single-node cluster: Kafka's internal __consumer_offsets/__transaction_state
+# topics default to replication-factor 3, which can never succeed with only
+# one broker. Left at the default, auto-creation of __consumer_offsets loops
+# forever and no consumer group can ever find a coordinator - every consumer
+# (e.g. processing-service) subscribes successfully but never receives a
+# single record. Mirrors the replication-factor 1 already used for
+# vehicle.telemetry.raw in topic-init-job.yaml.
+overrideConfiguration:
+  offsets.topic.replication.factor: 1
+  transaction.state.log.replication.factor: 1
+  transaction.state.log.min.isr: 1
