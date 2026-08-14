@@ -64,8 +64,11 @@ grafana:
       cpu: 200m
       # 256Mi OOMKilled Grafana in practice (main container + two watching
       # sidecars for dashboards/datasources all share the pod's cgroup);
-      # 384Mi has held up under normal browsing.
-      memory: 384Mi
+      # 384Mi also OOMKilled it after ~45 min of normal use once the
+      # dashboard had real data/panels loaded. Node has plenty of headroom
+      # (see infra/kafka + app service budgets), so give it real slack
+      # instead of chasing the exact minimum again.
+      memory: 640Mi
   defaultDashboardsEnabled: true
 
 kubeStateMetrics:
