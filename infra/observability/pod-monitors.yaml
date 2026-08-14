@@ -31,3 +31,11 @@ spec:
     - port: http
       path: /actuator/prometheus
       interval: 30s
+    # ingestion-service moved its actuator endpoints (including /actuator/
+    # prometheus) to a separate "management" port, isolated from the
+    # request-handling "http" port -- see application.yml. load-generator
+    # and processing-service don't have a "management" port, so this entry
+    # simply produces no target for them.
+    - port: management
+      path: /actuator/prometheus
+      interval: 30s
