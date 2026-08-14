@@ -14,6 +14,8 @@
 #   make deploy-service SERVICE=ingestion-service ENV=local   # roll out one service
 #   make deploy-services ENV=cloud                   # roll out all app services
 #   make deploy-infra ENV=local                      # namespace + kafka + topic
+#   make redeploy-infra ENV=local                     # tear down + re-deploy the infra stack (kafka + topic)
+#   make redeploy-app ENV=local GHCR_OWNER=...        # tear down + rebuild/push/deploy all app services
 #   make bootstrap ENV=cloud                         # one-time: infra + initial app manifests
 #   make deploy-all ENV=cloud                        # infra + all services
 #   make rollback SERVICE=ingestion-service ENV=cloud
@@ -60,6 +62,7 @@ endif
         build build-all image image-all push push-all \
         helm-repo namespace ghcr-secret deploy-infra deploy-init \
         deploy-service deploy-services deploy-all rollback status health bootstrap clean \
+        redeploy-infra redeploy-app \
         teardown-services teardown-infra teardown
 
 help: ## Show this help
@@ -141,6 +144,10 @@ deploy-infra: namespace ## Deploy the infra stack (kafka + topic)
 	cat infra/kafka/values.yaml | $(HELM) upgrade --install kafka bitnami/kafka --namespace $(NAMESPACE) -f -
 	cat infra/kafka/topic-init-job.yaml | $(KUBECTL) apply -f -
 
+redeploy-infra: ## Tear down and re-deploy the infra stack (kafka + topic)
+	$(MAKE) teardown-infra ENV=$(ENV) DEPLOY_USER=$(DEPLOY_USER) DEPLOY_HOST=$(DEPLOY_HOST)
+	$(MAKE) deploy-infra ENV=$(ENV) DEPLOY_USER=$(DEPLOY_USER) DEPLOY_HOST=$(DEPLOY_HOST)
+
 ## --- service stack (ingestion_service, load_generator) -----------------
 
 deploy-init: check-registry namespace ## One-time: create initial Deployments/Services for all app services
@@ -156,6 +163,13 @@ deploy-service: check-service check-registry ## Roll out a new image for one ser
 
 deploy-services: check-registry ## Roll out a new image for all app services
 	@for s in $(SERVICES); do $(MAKE) deploy-service SERVICE=$$s ENV=$(ENV) TAG=$(TAG) GHCR_OWNER=$(GHCR_OWNER) GHCR_REPO=$(GHCR_REPO); done
+
+redeploy-app: check-registry ## Tear down, rebuild, and re-deploy all app services (code changes)
+	$(MAKE) teardown-services ENV=$(ENV) DEPLOY_USER=$(DEPLOY_USER) DEPLOY_HOST=$(DEPLOY_HOST)
+	$(MAKE) build-all
+	$(MAKE) image-all GHCR_OWNER=$(GHCR_OWNER) GHCR_REPO=$(GHCR_REPO) TAG=$(TAG)
+	$(MAKE) push-all GHCR_OWNER=$(GHCR_OWNER) GHCR_REPO=$(GHCR_REPO) TAG=$(TAG)
+	$(MAKE) deploy-init ENV=$(ENV) GHCR_OWNER=$(GHCR_OWNER) GHCR_REPO=$(GHCR_REPO) TAG=$(TAG) DEPLOY_USER=$(DEPLOY_USER) DEPLOY_HOST=$(DEPLOY_HOST)
 
 rollback: check-service ## Undo the last rollout for one service (SERVICE=<name>)
 	$(KUBECTL) rollout undo deployment/$(SERVICE) -n $(NAMESPACE)
