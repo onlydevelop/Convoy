@@ -21,6 +21,8 @@
 #   make rollback SERVICE=ingestion-service ENV=cloud
 #   make status ENV=local                             # nodes/deployments/pods/svc
 #   make health ENV=local                             # hit /health on both services
+#   make logs ENV=local                               # recent logs from all services
+#   make logs SERVICE=ingestion-service FOLLOW=1        # follow logs for one service
 #   make teardown ENV=local                          # delete everything (services, infra, namespace)
 #   make setup-cloud ENV=cloud DEPLOY_USER=... DEPLOY_HOST=...  # install k3s+helm on a fresh VM
 #
@@ -46,6 +48,9 @@ REGISTRY := ghcr.io/$(GHCR_OWNER)/$(GHCR_REPO)
 DEPLOY_USER ?=
 DEPLOY_HOST ?=
 
+LOG_LINES ?= 100
+FOLLOW ?=
+
 # k3s writes its kubeconfig to /etc/rancher/k3s/k3s.yaml; setup-cloud installs
 # k3s with K3S_KUBECONFIG_MODE=644 so DEPLOY_USER can read it without sudo.
 ifeq ($(ENV),cloud)
@@ -61,7 +66,7 @@ endif
 .PHONY: help check-registry check-service check-cloud setup-cloud \
         build build-all image image-all push push-all \
         helm-repo namespace ghcr-secret deploy-infra deploy-init \
-        deploy-service deploy-services deploy-all rollback status health bootstrap clean \
+        deploy-service deploy-services deploy-all rollback status health logs bootstrap clean \
         redeploy-infra redeploy-app \
         teardown-services teardown-infra teardown
 
@@ -183,6 +188,16 @@ health: ## Hit the /health endpoint on both services via kubectl exec
 	@$(KUBECTL) exec -n $(NAMESPACE) deploy/ingestion-service -- wget -qO- http://localhost:8080/health && echo
 	@echo "== load-generator (:8081/health) =="
 	@$(KUBECTL) exec -n $(NAMESPACE) deploy/load-generator -- wget -qO- http://localhost:8081/health && echo
+
+logs: ## Show recent logs for all services (or one via SERVICE=<name>; add FOLLOW=1 to tail -f)
+ifneq ($(SERVICE),)
+	$(KUBECTL) logs -n $(NAMESPACE) deploy/$(SERVICE) --tail=$(LOG_LINES) $(if $(FOLLOW),-f)
+else
+	@for s in $(SERVICES); do \
+		echo "== $$s =="; \
+		$(KUBECTL) logs -n $(NAMESPACE) deploy/$$s --tail=$(LOG_LINES); \
+	done
+endif
 
 ## --- whole stack ---------------------------------------------------------
 
