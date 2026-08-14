@@ -1,0 +1,19 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: load-generator
+
+app:
+  target:
+    url: ${INGESTION_SERVICE_URL:http://ingestion-service.fleet-ingestion.svc.cluster.local:8080}
+  simulation:
+    vehicle-count: ${VEHICLE_COUNT:10000}
+    ping-interval-seconds: ${PING_INTERVAL_SECONDS:10}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics

@@ -1,0 +1,4 @@
+rootProject.name = 'fleet-ingestion-system'
+
+include 'services:ingestion-service'
+include 'services:load-generator'

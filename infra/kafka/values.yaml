@@ -1,0 +1,24 @@
+# Bitnami Kafka chart values for single-node KRaft mode (implementation-spec.md §4).
+# KRaft combined mode: controller nodes also act as brokers, so broker.replicaCount
+# stays at 0 and controller.replicaCount is the only node count that matters.
+kraft:
+  enabled: true
+
+controller:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 1536Mi
+  persistence:
+    size: 2Gi
+
+broker:
+  replicaCount: 0
+
+listeners:
+  client:
+    protocol: PLAINTEXT
