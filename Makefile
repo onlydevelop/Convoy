@@ -207,13 +207,17 @@ status: ## Show cluster/namespace status: nodes, deployments, pods, services
 	$(KUBECTL) get deployments,pods,svc -n $(NAMESPACE) -o wide
 	-$(KUBECTL) get deployments,pods,svc -n $(OBSERVABILITY_NAMESPACE) -o wide
 
-health: ## Hit the /health endpoint on all services via kubectl exec
+health: ## Hit the /health endpoint on all services, plus kafka and grafana, via kubectl exec
 	@echo "== ingestion-service (:8080/health) =="
 	@$(KUBECTL) exec -n $(NAMESPACE) deploy/ingestion-service -- wget -qO- http://localhost:8080/health && echo
 	@echo "== load-generator (:8081/health) =="
 	@$(KUBECTL) exec -n $(NAMESPACE) deploy/load-generator -- wget -qO- http://localhost:8081/health && echo
 	@echo "== processing-service (:8082/health) =="
 	@$(KUBECTL) exec -n $(NAMESPACE) deploy/processing-service -- wget -qO- http://localhost:8082/health && echo
+	@echo "== kafka (broker API check) =="
+	@-$(KUBECTL) exec -n $(NAMESPACE) kafka-controller-0 -- kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1 && echo '{"status":"UP"}' || echo '{"status":"DOWN"}'
+	@echo "== grafana (:3000/api/health) =="
+	@-$(KUBECTL) exec -n $(OBSERVABILITY_NAMESPACE) deploy/kube-prometheus-stack-grafana -- wget -qO- http://localhost:3000/api/health && echo || echo '{"status":"DOWN"}'
 
 logs: ## Show recent logs for all services (or one via SERVICE=<name>; add FOLLOW=1 to tail -f)
 ifneq ($(SERVICE),)
