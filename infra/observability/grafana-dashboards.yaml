@@ -44,146 +44,11 @@ data:
         ]
       },
       "panels": [
-        { "id": 1, "type": "row", "title": "Container Resources (cAdvisor)", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 } },
-        {
-          "id": 2, "type": "timeseries", "title": "Container CPU usage (cores)",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
-          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"convoy\", pod=~\"$app.*\"}[5m])) by (pod)",
-              "legendFormat": "{{pod}}"
-            }
-          ]
-        },
-        {
-          "id": 3, "type": "timeseries", "title": "Container memory working set",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
-          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "sum(container_memory_working_set_bytes{namespace=\"convoy\", pod=~\"$app.*\"}) by (pod)",
-              "legendFormat": "{{pod}}"
-            }
-          ]
-        },
-
-        { "id": 4, "type": "row", "title": "JVM Process CPU", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 } },
-        {
-          "id": 5, "type": "timeseries", "title": "Process CPU usage (%)",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
-          "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "min": 0 }, "overrides": [] },
-          "targets": [
-            { "refId": "A", "expr": "process_cpu_usage{app=~\"$app\"} * 100", "legendFormat": "{{app}} process" }
-          ]
-        },
-        {
-          "id": 6, "type": "timeseries", "title": "System CPU usage (%)",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
-          "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "min": 0 }, "overrides": [] },
-          "targets": [
-            { "refId": "A", "expr": "system_cpu_usage{app=~\"$app\"} * 100", "legendFormat": "{{app}} node" }
-          ]
-        },
-
-        { "id": 7, "type": "row", "title": "JVM Memory", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 } },
-        {
-          "id": 8, "type": "timeseries", "title": "Heap used vs max",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
-          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
-          "targets": [
-            { "refId": "A", "expr": "jvm_memory_used_bytes{app=~\"$app\", area=\"heap\"}", "legendFormat": "{{app}} used" },
-            { "refId": "B", "expr": "jvm_memory_max_bytes{app=~\"$app\", area=\"heap\"}", "legendFormat": "{{app}} max" }
-          ]
-        },
-        {
-          "id": 9, "type": "timeseries", "title": "Non-heap used",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
-          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
-          "targets": [
-            { "refId": "A", "expr": "jvm_memory_used_bytes{app=~\"$app\", area=\"nonheap\"}", "legendFormat": "{{app}} {{id}}" }
-          ]
-        },
-        {
-          "id": 10, "type": "timeseries", "title": "G1 memory pools (Eden / Survivor / Old)",
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 27 },
-          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
-          "targets": [
-            { "refId": "A", "expr": "jvm_memory_used_bytes{app=~\"$app\", id=~\"G1.*\"}", "legendFormat": "{{app}} {{id}}" }
-          ]
-        },
-
-        { "id": 11, "type": "row", "title": "G1 Garbage Collection", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 } },
-        {
-          "id": 12, "type": "timeseries", "title": "GC pause rate by collection type",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
-          "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
-          "targets": [
-            { "refId": "A", "expr": "rate(jvm_gc_pause_seconds_count{app=~\"$app\"}[5m])", "legendFormat": "{{app}} {{gc}}/{{action}}" }
-          ]
-        },
-        {
-          "id": 13, "type": "timeseries", "title": "Time spent in GC (%)",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
-          "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
-          "targets": [
-            { "refId": "A", "expr": "rate(jvm_gc_pause_seconds_sum{app=~\"$app\"}[5m])", "legendFormat": "{{app}} {{gc}}" }
-          ]
-        },
-        {
-          "id": 14, "type": "timeseries", "title": "Max GC pause duration",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 44 },
-          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
-          "targets": [
-            { "refId": "A", "expr": "jvm_gc_pause_seconds_max{app=~\"$app\"}", "legendFormat": "{{app}} {{gc}}/{{action}}" }
-          ]
-        },
-        {
-          "id": 15, "type": "timeseries", "title": "Allocation & promotion rate",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 44 },
-          "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
-          "targets": [
-            { "refId": "A", "expr": "rate(jvm_gc_memory_allocated_bytes_total{app=~\"$app\"}[5m])", "legendFormat": "{{app}} allocated" },
-            { "refId": "B", "expr": "rate(jvm_gc_memory_promoted_bytes_total{app=~\"$app\"}[5m])", "legendFormat": "{{app}} promoted (young->old)" }
-          ]
-        },
-        {
-          "id": 16, "type": "timeseries", "title": "Old gen live data size vs max (post full-GC)",
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 52 },
-          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
-          "targets": [
-            { "refId": "A", "expr": "jvm_gc_live_data_size_bytes{app=~\"$app\"}", "legendFormat": "{{app}} live" },
-            { "refId": "B", "expr": "jvm_gc_max_data_size_bytes{app=~\"$app\"}", "legendFormat": "{{app}} max" }
-          ]
-        },
-
-        { "id": 17, "type": "row", "title": "Threads & Process", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 60 } },
-        {
-          "id": 18, "type": "timeseries", "title": "JVM threads",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 61 },
-          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-          "targets": [
-            { "refId": "A", "expr": "jvm_threads_live_threads{app=~\"$app\"}", "legendFormat": "{{app}} live" },
-            { "refId": "B", "expr": "jvm_threads_daemon_threads{app=~\"$app\"}", "legendFormat": "{{app}} daemon" },
-            { "refId": "C", "expr": "jvm_threads_peak_threads{app=~\"$app\"}", "legendFormat": "{{app}} peak" }
-          ]
-        },
-        {
-          "id": 19, "type": "stat", "title": "Process uptime",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 61 },
-          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
-          "targets": [
-            { "refId": "A", "expr": "process_uptime_seconds{app=~\"$app\"}", "legendFormat": "{{app}}" }
-          ]
-        },
-
-        { "id": 20, "type": "row", "title": "Throughput", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 69 } },
+        { "id": 20, "type": "row", "title": "Throughput", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 } },
         {
           "id": 21, "type": "timeseries", "title": "Requests per second (all services)",
           "description": "Each service's request-rate metric is different by design: ingestion-service measures inbound HTTP it receives, load-generator measures outbound HTTP it sends, processing-service measures Kafka records it consumes. Not filtered by the Service dropdown above -- always shows all three so they're comparable on one graph.",
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 70 },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 1 },
           "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
           "targets": [
             {
@@ -201,6 +66,141 @@ data:
               "expr": "sum(rate(spring_kafka_listener_seconds_count{app=\"processing-service\"}[5m]))",
               "legendFormat": "processing-service (Kafka records consumed)"
             }
+          ]
+        },
+
+        { "id": 17, "type": "row", "title": "Threads & Process", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 } },
+        {
+          "id": 18, "type": "timeseries", "title": "JVM threads",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "targets": [
+            { "refId": "A", "expr": "jvm_threads_live_threads{app=~\"$app\"}", "legendFormat": "{{app}} live" },
+            { "refId": "B", "expr": "jvm_threads_daemon_threads{app=~\"$app\"}", "legendFormat": "{{app}} daemon" },
+            { "refId": "C", "expr": "jvm_threads_peak_threads{app=~\"$app\"}", "legendFormat": "{{app}} peak" }
+          ]
+        },
+        {
+          "id": 19, "type": "stat", "title": "Process uptime",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "targets": [
+            { "refId": "A", "expr": "process_uptime_seconds{app=~\"$app\"}", "legendFormat": "{{app}}" }
+          ]
+        },
+
+        { "id": 1, "type": "row", "title": "Container Resources (cAdvisor)", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 } },
+        {
+          "id": 2, "type": "timeseries", "title": "Container CPU usage (cores)",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"convoy\", pod=~\"$app.*\"}[5m])) by (pod)",
+              "legendFormat": "{{pod}}"
+            }
+          ]
+        },
+        {
+          "id": 3, "type": "timeseries", "title": "Container memory working set",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"convoy\", pod=~\"$app.*\"}) by (pod)",
+              "legendFormat": "{{pod}}"
+            }
+          ]
+        },
+
+        { "id": 4, "type": "row", "title": "JVM Process CPU", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 } },
+        {
+          "id": 5, "type": "timeseries", "title": "Process CPU usage (%)",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+          "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "min": 0 }, "overrides": [] },
+          "targets": [
+            { "refId": "A", "expr": "process_cpu_usage{app=~\"$app\"} * 100", "legendFormat": "{{app}} process" }
+          ]
+        },
+        {
+          "id": 6, "type": "timeseries", "title": "System CPU usage (%)",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+          "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "min": 0 }, "overrides": [] },
+          "targets": [
+            { "refId": "A", "expr": "system_cpu_usage{app=~\"$app\"} * 100", "legendFormat": "{{app}} node" }
+          ]
+        },
+
+        { "id": 7, "type": "row", "title": "JVM Memory", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 } },
+        {
+          "id": 8, "type": "timeseries", "title": "Heap used vs max",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [
+            { "refId": "A", "expr": "jvm_memory_used_bytes{app=~\"$app\", area=\"heap\"}", "legendFormat": "{{app}} used" },
+            { "refId": "B", "expr": "jvm_memory_max_bytes{app=~\"$app\", area=\"heap\"}", "legendFormat": "{{app}} max" }
+          ]
+        },
+        {
+          "id": 9, "type": "timeseries", "title": "Non-heap used",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [
+            { "refId": "A", "expr": "jvm_memory_used_bytes{app=~\"$app\", area=\"nonheap\"}", "legendFormat": "{{app}} {{id}}" }
+          ]
+        },
+        {
+          "id": 10, "type": "timeseries", "title": "G1 memory pools (Eden / Survivor / Old)",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 45 },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [
+            { "refId": "A", "expr": "jvm_memory_used_bytes{app=~\"$app\", id=~\"G1.*\"}", "legendFormat": "{{app}} {{id}}" }
+          ]
+        },
+
+        { "id": 11, "type": "row", "title": "G1 Garbage Collection", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 } },
+        {
+          "id": 12, "type": "timeseries", "title": "GC pause rate by collection type",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 54 },
+          "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+          "targets": [
+            { "refId": "A", "expr": "rate(jvm_gc_pause_seconds_count{app=~\"$app\"}[5m])", "legendFormat": "{{app}} {{gc}}/{{action}}" }
+          ]
+        },
+        {
+          "id": 13, "type": "timeseries", "title": "Time spent in GC (%)",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 54 },
+          "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+          "targets": [
+            { "refId": "A", "expr": "rate(jvm_gc_pause_seconds_sum{app=~\"$app\"}[5m])", "legendFormat": "{{app}} {{gc}}" }
+          ]
+        },
+        {
+          "id": 14, "type": "timeseries", "title": "Max GC pause duration",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 62 },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "targets": [
+            { "refId": "A", "expr": "jvm_gc_pause_seconds_max{app=~\"$app\"}", "legendFormat": "{{app}} {{gc}}/{{action}}" }
+          ]
+        },
+        {
+          "id": 15, "type": "timeseries", "title": "Allocation & promotion rate",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 62 },
+          "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+          "targets": [
+            { "refId": "A", "expr": "rate(jvm_gc_memory_allocated_bytes_total{app=~\"$app\"}[5m])", "legendFormat": "{{app}} allocated" },
+            { "refId": "B", "expr": "rate(jvm_gc_memory_promoted_bytes_total{app=~\"$app\"}[5m])", "legendFormat": "{{app}} promoted (young->old)" }
+          ]
+        },
+        {
+          "id": 16, "type": "timeseries", "title": "Old gen live data size vs max (post full-GC)",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 70 },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [
+            { "refId": "A", "expr": "jvm_gc_live_data_size_bytes{app=~\"$app\"}", "legendFormat": "{{app}} live" },
+            { "refId": "B", "expr": "jvm_gc_max_data_size_bytes{app=~\"$app\"}", "legendFormat": "{{app}} max" }
           ]
         }
       ]
