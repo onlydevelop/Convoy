@@ -9,7 +9,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class LoadGeneratorConfig {
 
     @Bean
-    WebClient ingestionWebClient(@Value("${app.target.url}") String targetUrl) {
-        return WebClient.builder().baseUrl(targetUrl).build();
+    WebClient ingestionWebClient(WebClient.Builder builder, @Value("${app.target.url}") String targetUrl) {
+        // Use Spring Boot's auto-configured builder, not the static WebClient.builder()
+        // factory, so the WebClient inherits the app's Jackson config (snake_case naming) -
+        // otherwise it serializes with default camelCase field names.
+        return builder.baseUrl(targetUrl).build();
     }
 }
